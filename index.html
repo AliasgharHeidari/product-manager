@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>منوی دیجیتال کافه</title>
+    <link href="https://cdn.fontcdn.ir/Font/Persian/Vazir/Vazir.css" rel="stylesheet" />
+    <link rel="stylesheet" href="style-Aurora.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+
+<!-- ===== دیالوگ لاگین ===== -->
+<div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+        <h2>🔐 ورود به مدیریت</h2>
+        <p>لطفاً رمز عبور را وارد کنید</p>
+        <input type="password" id="loginPassword" placeholder="رمز عبور" />
+        
+        <div class="captcha-box">
+            <input type="number" id="captchaInput" placeholder="جواب" />
+            <span id="captchaQuestion">۵ + ۳ = ?</span>
+        </div>
+
+        <div class="timer-box">
+            <span id="timerDisplay">۲۰</span> ثانیه تا فعال شدن دکمه
+        </div>
+
+        <button class="btn-primary" id="loginSubmitBtn" disabled>ورود</button>
+        <div class="login-error" id="loginError"></div>
+    </div>
+</div>
+
+<!-- ===== محتوای اصلی ===== -->
+<div class="container">
+
+    <!-- ===== هدر ===== -->
+    <div class="header">
+        <!-- سمت چپ: دکمه‌ها -->
+        <div class="header-actions">
+            <button class="btn-login" id="loginBtn" title="ورود به مدیریت">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C9.79086 2 8 3.79086 8 6V8H6C4.89543 8 4 8.89543 4 10V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V10C20 8.89543 19.1046 8 18 8H16V6C16 3.79086 14.2091 2 12 2Z" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 14V17" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+                    <circle cx="12" cy="17" r="1" fill="white"/>
+                </svg>
+            </button>
+            <button class="btn-logout hidden" id="logoutBtn" title="خروج">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 17L21 12L16 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M21 12H9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <button class="admin-toggle hidden" id="adminToggle">🛠 مدیریت</button>
+        </div>
+        
+        <!-- وسط: اسم کافه -->
+        <h1><span>منوی</span> کافه</h1>
+        
+        <!-- سمت راست: آیکون رعد -->
+        <div id="statusIcon" class="status-icon connected" title="متصل به دیتابیس">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 2L4 14H12L11 22L20 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- پنل ادمین -->
+    <div class="admin-panel" id="adminPanel">
+        <h2>➕ افزودن محصول جدید</h2>
+        
+        <!-- فرم محصول -->
+        <div class="form-group">
+            <input type="text" id="productName" placeholder="نام محصول (مثلاً اسپرسو)" />
+            <input type="text" id="productPrice" placeholder="قیمت (مثلاً ۳۵,۰۰۰)" />
+        </div>
+        <div class="form-group">
+            <input type="text" id="productImage" placeholder="لینک تصویر (از اینترنت)" />
+            <select id="productCategory" class="form-select">
+                <option value="">انتخاب دسته‌بندی...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <textarea id="productDesc" placeholder="توضیحات کوتاه..."></textarea>
+        </div>
+        
+        <!-- بخش مدیریت دسته‌بندی‌ها -->
+        <div class="category-manager">
+            <h3>📂 مدیریت دسته‌بندی‌ها</h3>
+            <div class="form-group">
+                <input type="text" id="newCategoryName" placeholder="نام دسته‌بندی جدید (مثلاً نوشیدنی)" />
+                <button class="btn-secondary" id="addCategoryBtn">➕ افزودن دسته</button>
+            </div>
+            <div id="categoryList" class="category-list">
+                <!-- لیست دسته‌بندی‌ها توسط JS ساخته می‌شه -->
+            </div>
+        </div>
+
+        <!-- دکمه‌های عملیات -->
+        <div class="form-actions">
+            <button class="btn-primary" id="saveProductBtn">✅ ذخیره محصول</button>
+            <span id="editId" style="display:none;"></span>
+            <button class="btn-danger" id="cancelEditBtn" style="display:none; margin-right:12px;">✖ انصراف</button>
+        </div>
+    </div>
+
+    <!-- لیست محصولات -->
+    <div class="product-grid" id="productGrid">
+        <div class="loading-state">⏳ در حال بارگذاری منو...</div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

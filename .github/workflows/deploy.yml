@@ -1,0 +1,39 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Replace secrets in script.js
+        run: |
+          # جایگزینی توکن و Gist ID در فایل script.js
+          sed -i "s|PUT_YOUR_GIST_TOKEN_HERE|${{ secrets.GIST_TOKEN }}|g" script.js
+          sed -i "s|PUT_YOUR_GIST_ID_HERE|${{ secrets.GIST_ID }}|g" script.js
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
