@@ -23,11 +23,91 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
-      - name: Replace secrets in script.js
+      - name: 🔍 Check if secrets exist
         run: |
-          # جایگزینی توکن و Gist ID در فایل script.js
-          sed -i "s|PUT_YOUR_GIST_TOKEN_HERE|${{ secrets.GIST_TOKEN }}|g" script.js
-          sed -i "s|PUT_YOUR_GIST_ID_HERE|${{ secrets.GIST_ID }}|g" script.js
+          echo "=========================================="
+          echo "🔍 Checking Secrets..."
+          echo "=========================================="
+          
+          # چک کردن GIST_TOKEN
+          if [ -n "${{ secrets.GIST_TOKEN }}" ]; then
+            echo "✅ GIST_TOKEN: exists (length: ${#GIST_TOKEN})"
+            echo "✅ GIST_TOKEN: $(echo ${{ secrets.GIST_TOKEN }} | cut -c1-10)..."
+          else
+            echo "❌ GIST_TOKEN: NOT FOUND!"
+          fi
+          
+          # چک کردن GIST_ID
+          if [ -n "${{ secrets.GIST_ID }}" ]; then
+            echo "✅ GIST_ID: exists (length: ${#GIST_ID})"
+            echo "✅ GIST_ID: $(echo ${{ secrets.GIST_ID }} | cut -c1-10)..."
+          else
+            echo "❌ GIST_ID: NOT FOUND!"
+          fi
+          
+          echo "=========================================="
+      
+      - name: 📄 Check script.js before replacement
+        run: |
+          echo "=========================================="
+          echo "📄 script.js BEFORE replacement:"
+          echo "=========================================="
+          grep -n "PUT_YOUR_GIST" script.js || echo "⚠️ No placeholder found!"
+          echo "=========================================="
+      
+      - name: 🔄 Replace secrets in script.js
+        run: |
+          echo "=========================================="
+          echo "🔄 Replacing secrets in script.js..."
+          echo "=========================================="
+          
+          # جایگزینی توکن
+          if [ -n "${{ secrets.GIST_TOKEN }}" ]; then
+            sed -i "s|PUT_YOUR_GIST_TOKEN_HERE|${{ secrets.GIST_TOKEN }}|g" script.js
+            echo "✅ GIST_TOKEN replaced"
+          else
+            echo "❌ GIST_TOKEN is empty, skipping replacement"
+          fi
+          
+          # جایگزینی Gist ID
+          if [ -n "${{ secrets.GIST_ID }}" ]; then
+            sed -i "s|PUT_YOUR_GIST_ID_HERE|${{ secrets.GIST_ID }}|g" script.js
+            echo "✅ GIST_ID replaced"
+          else
+            echo "❌ GIST_ID is empty, skipping replacement"
+          fi
+          
+          echo "=========================================="
+      
+      - name: 📄 Check script.js after replacement
+        run: |
+          echo "=========================================="
+          echo "📄 script.js AFTER replacement:"
+          echo "=========================================="
+          
+          # چک کردن اینکه آیا GIST_TOKEN جایگزین شده
+          if grep -q "ghp_" script.js; then
+            echo "✅ GIST_TOKEN was replaced successfully"
+            grep -n "ghp_" script.js | head -3
+          else
+            echo "⚠️ GIST_TOKEN was NOT replaced (still has placeholder or empty)"
+          fi
+          
+          # چک کردن اینکه آیا GIST_ID جایگزین شده
+          if grep -q "GIST_ID = '14cbb" script.js || grep -q "GIST_ID = '[0-9a-f]" script.js; then
+            echo "✅ GIST_ID was replaced successfully"
+            grep -n "GIST_ID = '" script.js | head -3
+          else
+            echo "⚠️ GIST_ID was NOT replaced (still has placeholder or empty)"
+          fi
+          
+          echo "=========================================="
+          
+          # نمایش چند خط از script.js برای دیباگ
+          echo "📄 First 30 lines of script.js:"
+          echo "=========================================="
+          head -30 script.js
+          echo "=========================================="
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
