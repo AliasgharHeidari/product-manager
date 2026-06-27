@@ -1,6 +1,6 @@
 (function() {
 
-    const GIST_ID = 'PUT_YOUR_GIST_ID_HERE';      // ← اینجا با Secret جایگزین میشه
+    const GIST_ID = 'a1e0ae6053e9e0cd26072a8041fc95a9';      // ← اینجا با Secret جایگزین میشه
     const GIST_TOKEN = 'PUT_YOUR_GIST_TOKEN_HERE'; // ← اینجا با Secret جایگزین میشه
     // ============================================================
 
