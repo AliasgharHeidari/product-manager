@@ -23,89 +23,49 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
-      - name: 🔍 Check if secrets exist
-        run: |
-          echo "=========================================="
-          echo "🔍 Checking Secrets..."
-          echo "=========================================="
-          
-          # چک کردن GIST_TOKEN
-          if [ -n "${{ secrets.GIST_TOKEN }}" ]; then
-            echo "✅ GIST_TOKEN: exists"
-            echo "✅ GIST_TOKEN length: $(echo -n "${{ secrets.GIST_TOKEN }}" | wc -c)"
-            echo "✅ GIST_TOKEN starts with: $(echo "${{ secrets.GIST_TOKEN }}" | cut -c1-10)..."
-          else
-            echo "❌ GIST_TOKEN: NOT FOUND!"
-          fi
-          
-          # چک کردن GIST_ID
-          if [ -n "${{ secrets.GIST_ID }}" ]; then
-            echo "✅ GIST_ID: exists"
-            echo "✅ GIST_ID length: $(echo -n "${{ secrets.GIST_ID }}" | wc -c)"
-            echo "✅ GIST_ID: $(echo "${{ secrets.GIST_ID }}" | cut -c1-10)..."
-          else
-            echo "❌ GIST_ID: NOT FOUND!"
-          fi
-          
-          echo "=========================================="
-      
-      - name: 📄 Check script.js before replacement
+      - name: 🔍 Debug - Show script.js before replacement
         run: |
           echo "=========================================="
           echo "📄 script.js BEFORE replacement:"
           echo "=========================================="
-          grep -n "PUT_YOUR_GIST" script.js || echo "⚠️ No placeholder found!"
+          cat script.js | head -10
           echo ""
-          echo "🔍 First 5 lines of script.js:"
-          head -5 script.js
+          echo "🔍 Looking for placeholders:"
+          grep -n "PUT_YOUR_GIST" script.js || echo "⚠️ No placeholder found!"
           echo "=========================================="
       
-      - name: 🔄 Replace secrets in script.js
+      - name: 🔄 Replace secrets with proper escaping
         run: |
           echo "=========================================="
-          echo "🔄 Replacing secrets in script.js..."
+          echo "🔄 Replacing secrets..."
           echo "=========================================="
           
-          # جایگزینی توکن
-          if [ -n "${{ secrets.GIST_TOKEN }}" ]; then
-            sed -i "s|PUT_YOUR_GIST_TOKEN_HERE|${{ secrets.GIST_TOKEN }}|g" script.js
-            echo "✅ GIST_TOKEN replaced"
-          else
-            echo "❌ GIST_TOKEN is empty, skipping replacement"
-          fi
+          # جایگزینی GIST_ID - با دقت بیشتر
+          GIST_ID_VALUE="${{ secrets.GIST_ID }}"
+          GIST_TOKEN_VALUE="${{ secrets.GIST_TOKEN }}"
           
-          # جایگزینی Gist ID
-          if [ -n "${{ secrets.GIST_ID }}" ]; then
-            sed -i "s|PUT_YOUR_GIST_ID_HERE|${{ secrets.GIST_ID }}|g" script.js
-            echo "✅ GIST_ID replaced"
-          else
-            echo "❌ GIST_ID is empty, skipping replacement"
-          fi
+          echo "GIST_ID length: ${#GIST_ID_VALUE}"
+          echo "GIST_TOKEN length: ${#GIST_TOKEN_VALUE}"
           
+          # استفاده از @ به جای | برای جلوگیری از تداخل
+          sed -i "s@PUT_YOUR_GIST_ID_HERE@${GIST_ID_VALUE}@g" script.js
+          sed -i "s@PUT_YOUR_GIST_TOKEN_HERE@${GIST_TOKEN_VALUE}@g" script.js
+          
+          echo "✅ Replacement done"
           echo "=========================================="
       
-      - name: 📄 Check script.js after replacement
+      - name: 🔍 Debug - Show script.js after replacement
         run: |
           echo "=========================================="
           echo "📄 script.js AFTER replacement:"
           echo "=========================================="
-          
-          # نمایش خطوط مربوط به GIST
-          echo "🔍 Lines containing GIST:"
-          grep -n "GIST_" script.js | head -5
-          
+          cat script.js | head -10
           echo ""
-          echo "🔍 First 10 lines of script.js:"
-          head -10 script.js
-          
+          echo "🔍 Checking if GIST_ID was replaced:"
+          grep -n "GIST_ID = '" script.js | head -3
           echo ""
-          echo "🔍 Checking if ghp_ exists in file:"
-          if grep -q "ghp_" script.js; then
-            echo "✅ GIST_TOKEN was replaced successfully (ghp_ found)"
-          else
-            echo "⚠️ GIST_TOKEN was NOT replaced (no ghp_ found)"
-          fi
-          
+          echo "🔍 Checking if GIST_TOKEN was replaced:"
+          grep -n "GIST_TOKEN = '" script.js | head -3
           echo "=========================================="
       
       - name: Upload artifact
