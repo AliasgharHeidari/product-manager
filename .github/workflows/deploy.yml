@@ -23,50 +23,40 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
-      - name: 🔍 Debug - Show script.js before replacement
+      - name: 🔍 Show script.js before replacement
         run: |
           echo "=========================================="
-          echo "📄 script.js BEFORE replacement:"
+          echo "📄 script.js BEFORE:"
           echo "=========================================="
-          cat script.js | head -10
-          echo ""
-          echo "🔍 Looking for placeholders:"
-          grep -n "PUT_YOUR_GIST" script.js || echo "⚠️ No placeholder found!"
-          echo "=========================================="
+          head -10 script.js
       
-      - name: 🔄 Replace secrets with proper escaping
+      - name: 🔄 Replace secrets using multiple methods
         run: |
           echo "=========================================="
           echo "🔄 Replacing secrets..."
           echo "=========================================="
           
-          # جایگزینی GIST_ID - با دقت بیشتر
-          GIST_ID_VALUE="${{ secrets.GIST_ID }}"
-          GIST_TOKEN_VALUE="${{ secrets.GIST_TOKEN }}"
+          # روش 1: استفاده از @
+          sed -i "s@PUT_YOUR_GIST_ID_HERE@${{ secrets.GIST_ID }}@g" script.js
+          sed -i "s@PUT_YOUR_GIST_TOKEN_HERE@${{ secrets.GIST_TOKEN }}@g" script.js
           
-          echo "GIST_ID length: ${#GIST_ID_VALUE}"
-          echo "GIST_TOKEN length: ${#GIST_TOKEN_VALUE}"
-          
-          # استفاده از @ به جای | برای جلوگیری از تداخل
-          sed -i "s@PUT_YOUR_GIST_ID_HERE@${GIST_ID_VALUE}@g" script.js
-          sed -i "s@PUT_YOUR_GIST_TOKEN_HERE@${GIST_TOKEN_VALUE}@g" script.js
+          # روش 2: استفاده از # (در صورت نیاز)
+          # sed -i "s#PUT_YOUR_GIST_ID_HERE#${{ secrets.GIST_ID }}#g" script.js
           
           echo "✅ Replacement done"
-          echo "=========================================="
       
-      - name: 🔍 Debug - Show script.js after replacement
+      - name: 🔍 Show script.js after replacement
         run: |
           echo "=========================================="
-          echo "📄 script.js AFTER replacement:"
+          echo "📄 script.js AFTER:"
           echo "=========================================="
-          cat script.js | head -10
+          head -10 script.js
           echo ""
           echo "🔍 Checking if GIST_ID was replaced:"
-          grep -n "GIST_ID = '" script.js | head -3
+          grep -c "a1e0ae6053e9e0cd26072a8041fc95a9" script.js && echo "✅ GIST_ID found!" || echo "❌ GIST_ID NOT found!"
           echo ""
           echo "🔍 Checking if GIST_TOKEN was replaced:"
-          grep -n "GIST_TOKEN = '" script.js | head -3
-          echo "=========================================="
+          grep -c "ghp_" script.js && echo "✅ GIST_TOKEN found!" || echo "❌ GIST_TOKEN NOT found!"
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
