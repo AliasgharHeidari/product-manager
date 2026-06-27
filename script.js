@@ -137,6 +137,10 @@
     // ============================================================
     async function fetchFromGist() {
         try {
+            console.log('🔄 fetchFromGist شروع شد...');
+            console.log('📡 GIST_ID:', GIST_ID);
+            console.log('📡 GIST_TOKEN:', GIST_TOKEN ? '✅ توکن وجود دارد' : '❌ توکن خالی است');
+            
             setStatus('⏳ در حال دریافت منو از سرور...', 'loading');
             const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
                 headers: {
@@ -145,8 +149,10 @@
                 }
             });
 
+            console.log('📡 وضعیت پاسخ:', response.status);
+
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                throw new Error(`HTTP ${response.status} - ${response.statusText}`);
             }
 
             const data = await response.json();
@@ -158,23 +164,22 @@
             }
 
             const content = JSON.parse(firstFile.content);
+            console.log('📦 محتوای Gist:', content);
             
-            // ===== از Gist بخون =====
             products = content.products || [];
             categories = content.categories || ['نوشیدنی', 'غذا', 'دسر'];
             
-            // ذخیره در localStorage به عنوان پشتیبان
             saveBackupToLocal();
             
             setStatus('✅ متصل به دیتابیس', '');
             
-            // ===== رندر کردن =====
             renderCategories();
             renderCategoryFilter();
             renderProducts();
+            console.log('✅ fetchFromGist با موفقیت کامل شد');
             return true;
         } catch (error) {
-            console.error('Gist fetch error:', error);
+            console.error('❌ Gist fetch error:', error);
             
             if (loadBackupFromLocal()) {
                 setStatus('⚠️ استفاده از پشتیبان محلی', 'error');
@@ -624,9 +629,17 @@
     // ============================================================
     checkLoginStatus();
 
-    if (GIST_ID !== 'PUT_YOUR_GIST_ID_HERE' && GIST_TOKEN !== 'PUT_YOUR_GIST_TOKEN_HERE') {
+    // ===== شرط برای دیباگ =====
+    const isGistConfigured = GIST_ID !== 'PUT_YOUR_GIST_ID_HERE' && GIST_TOKEN !== 'PUT_YOUR_GIST_TOKEN_HERE';
+    console.log('📡 آیا Gist تنظیم شده؟', isGistConfigured);
+    console.log('📡 GIST_ID:', GIST_ID);
+    console.log('📡 GIST_TOKEN:', GIST_TOKEN ? '✅ توکن وجود دارد' : '❌ توکن خالی است');
+
+    if (isGistConfigured) {
+        console.log('🔄 در حال دریافت از Gist...');
         fetchFromGist();
     } else {
+        console.log('⚠️ Gist تنظیم نشده، از دیتای پیش‌فرض استفاده میشود.');
         setStatus('⚠️ لطفاً Gist ID و Token را در فایل script.js تنظیم کنید.', 'error');
         grid.innerHTML = `<div class="empty-state">⚙️ ابتدا تنظیمات دیتابیس را کامل کنید</div>`;
         categories = ['نوشیدنی', 'غذا', 'دسر'];
