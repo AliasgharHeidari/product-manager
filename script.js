@@ -2,8 +2,7 @@
     // ============================================================
     // 🔐 تنظیمات Gist
     // ============================================================
-    const GIST_ID = 'a1e0ae6053e9e0cd26072a8041fc95a9';  // ← مستقیم توی کد
-    const GIST_TOKEN = 'PUT_YOUR_GIST_TOKEN_HERE';       // ← با Secret جایگزین میشه
+    const GIST_ID = 'a1e0ae6053e9e0cd26072a8041fc95a9';
     // ============================================================
 
     const PASSWORD_HASH = '49d0226ac8c0d68837d9a2ec8fa9e826d8a0f70f5e1c3cdb66cf869127c769c1';
@@ -112,7 +111,7 @@
             if (num1 < num2) return generateCaptcha();
             answer = num1 - num2;
         }
-        captchaQuestion.textContent = `? =${num2} ${operator} ${num1}`;
+        captchaQuestion.textContent = `? = ${num2} ${operator} ${num1}`;
         captchaAnswer = answer;
         return answer;
     }
@@ -135,38 +134,21 @@
     }
 
     // ============================================================
-    // 📡 ارتباط با Gist API
+    // 📡 ارتباط با Gist API (از فایل محلی)
     // ============================================================
     async function fetchFromGist() {
         try {
             console.log('🔄 fetchFromGist شروع شد...');
-            console.log('📡 GIST_ID:', GIST_ID);
-            console.log('📡 GIST_TOKEN:', GIST_TOKEN ? '✅ توکن وجود دارد' : '❌ توکن خالی است');
             
-            setStatus('⏳ در حال دریافت منو از سرور...', 'loading');
-            const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                headers: {
-                    'Authorization': `token ${GIST_TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-
-            console.log('📡 وضعیت پاسخ:', response.status);
-
+            // از فایل محلی data.json بخون (نه از API گیت‌هاب)
+            const response = await fetch('data.json');
+            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status} - ${response.statusText}`);
             }
-
-            const data = await response.json();
-            const files = data.files;
-            const firstFile = Object.values(files)[0];
             
-            if (!firstFile) {
-                throw new Error('فایلی در Gist یافت نشد');
-            }
-
-            const content = JSON.parse(firstFile.content);
-            console.log('📦 محتوای Gist:', content);
+            const content = await response.json();
+            console.log('📦 محتوای data.json:', content);
             
             products = content.products || [];
             categories = content.categories || ['نوشیدنی', 'غذا', 'دسر'];
@@ -202,42 +184,10 @@
     }
 
     async function saveToGist() {
-        try {
-            setStatus('⏳ در حال ذخیره روی سرور...', 'loading');
-            
-            const payload = {
-                files: {
-                    'products.json': {
-                        content: JSON.stringify({ 
-                            products: products,
-                            categories: categories 
-                        }, null, 2)
-                    }
-                }
-            };
-
-            const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `token ${GIST_TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            saveBackupToLocal();
-            setStatus('✅ ذخیره شد!', '');
-            return true;
-        } catch (error) {
-            console.error('Gist save error:', error);
-            setStatus('⚠️ خطا در ذخیره روی سرور', 'error');
-            return false;
-        }
+        // این تابع دیگه کاربردی نداره چون دیتا فقط از data.json میاد
+        // ولی برای حفظ سازگاری نگهش میداریم
+        console.warn('⚠️ saveToGist فقط برای حفظ سازگاری هست و کاری انجام نمیده');
+        return true;
     }
 
     // ============================================================
@@ -285,7 +235,8 @@
                         products.forEach(p => {
                             if (p.category === cat) p.category = '';
                         });
-                        await saveToGist();
+                        // ذخیره در localStorage
+                        saveBackupToLocal();
                         renderCategories();
                         renderCategoryFilter();
                         renderProducts();
@@ -323,7 +274,7 @@
     }
 
     // ============================================================
-    // مدیریت محصولات
+    // مدیریت محصولات (فقط محلی)
     // ============================================================
     async function addProduct(name, price, image, desc, category) {
         const newProduct = {
@@ -335,9 +286,10 @@
             category: category || ''
         };
         products.push(newProduct);
-        await saveToGist();
+        saveBackupToLocal();
         renderProducts();
         clearForm();
+        alert('✅ محصول اضافه شد (تغییرات فقط در این مرورگر ذخیره شد)');
     }
 
     async function updateProduct(id, name, price, image, desc, category) {
@@ -351,13 +303,14 @@
                 desc: desc.trim(),
                 category: category || ''
             };
-            await saveToGist();
+            saveBackupToLocal();
             renderProducts();
             clearForm();
             editingId = null;
             editIdSpan.style.display = 'none';
             cancelEditBtn.style.display = 'none';
             saveBtn.textContent = '✅ ذخیره محصول';
+            alert('✅ محصول ویرایش شد (تغییرات فقط در این مرورگر ذخیره شد)');
         }
     }
 
@@ -365,7 +318,7 @@
         const index = products.findIndex(p => p.id === id);
         if (index !== -1) {
             products = products.filter(p => p.id !== id);
-            await saveToGist();
+            saveBackupToLocal();
             renderProducts();
             if (editingId === id) {
                 clearForm();
@@ -374,6 +327,7 @@
                 cancelEditBtn.style.display = 'none';
                 saveBtn.textContent = '✅ ذخیره محصول';
             }
+            alert('✅ محصول حذف شد (تغییرات فقط در این مرورگر ذخیره شد)');
         }
     }
 
@@ -613,11 +567,12 @@
             return;
         }
         categories.push(name);
-        await saveToGist();
+        saveBackupToLocal();
         renderCategories();
         renderCategoryFilter();
         renderProducts();
         input.value = '';
+        alert('✅ دسته‌بندی اضافه شد (تغییرات فقط در این مرورگر ذخیره شد)');
     });
 
     document.getElementById('newCategoryName')?.addEventListener('keydown', (e) => {
@@ -631,10 +586,7 @@
     // ============================================================
     checkLoginStatus();
 
-    // ===== شرط جدید: فقط چک کن که GIST_ID مقدار درست داره =====
-    // چون GIST_ID مستقیم توی کد گذاشته شده، دیگه نیازی به شرط نیست
     console.log('📡 GIST_ID:', GIST_ID);
-    console.log('📡 GIST_TOKEN:', GIST_TOKEN ? '✅ توکن وجود دارد' : '❌ توکن خالی است');
-    console.log('🔄 در حال دریافت از Gist...');
+    console.log('🔄 در حال دریافت از data.json...');
     fetchFromGist();
 })();
