@@ -1,13 +1,15 @@
 (function() {
-
-    const GIST_ID = 'a1e0ae6053e9e0cd26072a8041fc95a9';      // ← اینجا با Secret جایگزین میشه
-    const GIST_TOKEN = 'PUT_YOUR_GIST_TOKEN_HERE'; // ← اینجا با Secret جایگزین میشه
+    // ============================================================
+    // 🔐 تنظیمات Gist
+    // ============================================================
+    const GIST_ID = 'a1e0ae6053e9e0cd26072a8041fc95a9';  // ← مستقیم توی کد
+    const GIST_TOKEN = 'PUT_YOUR_GIST_TOKEN_HERE';       // ← با Secret جایگزین میشه
     // ============================================================
 
     const PASSWORD_HASH = '49d0226ac8c0d68837d9a2ec8fa9e826d8a0f70f5e1c3cdb66cf869127c769c1';
     const LOCAL_STORAGE_KEY = 'cafe_menu_backup';
 
-    // ---------- متغیرهای اصلی (سراسری) ----------
+    // ---------- متغیرهای اصلی ----------
     let products = [];
     let categories = [];
     let currentFilter = 'همه';
@@ -110,7 +112,7 @@
             if (num1 < num2) return generateCaptcha();
             answer = num1 - num2;
         }
-        captchaQuestion.textContent = `? = ${num2} ${operator} ${num1} `;
+        captchaQuestion.textContent = `? = ${num2} ${operator} ${num1}`;
         captchaAnswer = answer;
         return answer;
     }
@@ -630,7 +632,7 @@
     checkLoginStatus();
 
     // ===== شرط برای دیباگ =====
-    const isGistConfigured = GIST_ID !== 'PUT_YOUR_GIST_ID_HERE' && GIST_TOKEN !== 'PUT_YOUR_GIST_TOKEN_HERE';
+    const isGistConfigured = GIST_TOKEN !== 'PUT_YOUR_GIST_TOKEN_HERE';
     console.log('📡 آیا Gist تنظیم شده؟', isGistConfigured);
     console.log('📡 GIST_ID:', GIST_ID);
     console.log('📡 GIST_TOKEN:', GIST_TOKEN ? '✅ توکن وجود دارد' : '❌ توکن خالی است');
@@ -640,7 +642,7 @@
         fetchFromGist();
     } else {
         console.log('⚠️ Gist تنظیم نشده، از دیتای پیش‌فرض استفاده میشود.');
-        setStatus('⚠️ لطفاً Gist ID و Token را در فایل script.js تنظیم کنید.', 'error');
+        setStatus('⚠️ لطفاً Gist Token را در فایل script.js تنظیم کنید.', 'error');
         grid.innerHTML = `<div class="empty-state">⚙️ ابتدا تنظیمات دیتابیس را کامل کنید</div>`;
         categories = ['نوشیدنی', 'غذا', 'دسر'];
         renderCategories();
