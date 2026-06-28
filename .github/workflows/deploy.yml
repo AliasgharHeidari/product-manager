@@ -23,29 +23,6 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
-      - name: 📡 Fetch data from Gist
-        run: |
-          echo "=========================================="
-          echo "📡 Fetching data from Gist..."
-          echo "=========================================="
-          
-          # دریافت دیتا از Gist
-          RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GIST_TOKEN }}" \
-                           -H "Accept: application/vnd.github.v3+json" \
-                           "https://api.github.com/gists/${{ secrets.GIST_ID }}")
-          
-          # استخراج محتوای فایل products.json
-          CONTENT=$(echo "$RESPONSE" | jq -r '.files["products.json"].content')
-          
-          # ذخیره در فایل data.json
-          echo "$CONTENT" > data.json
-          
-          echo "✅ Data saved to data.json"
-          echo "=========================================="
-          echo "📄 data.json content:"
-          cat data.json
-          echo "=========================================="
-      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -1,8 +1,9 @@
 (function() {
     // ============================================================
-    // 🔐 تنظیمات Gist
+    // 🔐 تنظیمات - از Cloudflare Worker میخونه
     // ============================================================
     const GIST_ID = 'a1e0ae6053e9e0cd26072a8041fc95a9';
+    const WORKER_URL = 'https://calm-block-ab1f.aliasgharaliali1213.workers.dev/'; // ← آدرس Worker رو اینجا بذار
     // ============================================================
 
     const PASSWORD_HASH = '49d0226ac8c0d68837d9a2ec8fa9e826d8a0f70f5e1c3cdb66cf869127c769c1';
@@ -111,7 +112,7 @@
             if (num1 < num2) return generateCaptcha();
             answer = num1 - num2;
         }
-        captchaQuestion.textContent = `? = ${num2} ${operator} ${num1}`;
+        captchaQuestion.textContent = `${num1} ${operator} ${num2} = ?`;
         captchaAnswer = answer;
         return answer;
     }
@@ -134,21 +135,30 @@
     }
 
     // ============================================================
-    // 📡 ارتباط با Gist API (از فایل محلی)
+    // 📡 ارتباط با Gist از طریق Cloudflare Worker
     // ============================================================
     async function fetchFromGist() {
         try {
             console.log('🔄 fetchFromGist شروع شد...');
+            console.log('📡 Worker URL:', WORKER_URL);
             
-            // از فایل محلی data.json بخون (نه از API گیت‌هاب)
-            const response = await fetch('data.json');
+            setStatus('⏳ در حال دریافت منو از سرور...', 'loading');
             
+            const response = await fetch(WORKER_URL, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            console.log('📡 وضعیت پاسخ:', response.status);
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status} - ${response.statusText}`);
             }
-            
+
             const content = await response.json();
-            console.log('📦 محتوای data.json:', content);
+            console.log('📦 محتوای دریافتی:', content);
             
             products = content.products || [];
             categories = content.categories || ['نوشیدنی', 'غذا', 'دسر'];
@@ -181,13 +191,6 @@
                 return false;
             }
         }
-    }
-
-    async function saveToGist() {
-        // این تابع دیگه کاربردی نداره چون دیتا فقط از data.json میاد
-        // ولی برای حفظ سازگاری نگهش میداریم
-        console.warn('⚠️ saveToGist فقط برای حفظ سازگاری هست و کاری انجام نمیده');
-        return true;
     }
 
     // ============================================================
@@ -235,7 +238,6 @@
                         products.forEach(p => {
                             if (p.category === cat) p.category = '';
                         });
-                        // ذخیره در localStorage
                         saveBackupToLocal();
                         renderCategories();
                         renderCategoryFilter();
@@ -274,7 +276,7 @@
     }
 
     // ============================================================
-    // مدیریت محصولات (فقط محلی)
+    // مدیریت محصولات
     // ============================================================
     async function addProduct(name, price, image, desc, category) {
         const newProduct = {
@@ -289,7 +291,6 @@
         saveBackupToLocal();
         renderProducts();
         clearForm();
-        alert('✅ محصول اضافه شد (تغییرات فقط در این مرورگر ذخیره شد)');
     }
 
     async function updateProduct(id, name, price, image, desc, category) {
@@ -310,7 +311,6 @@
             editIdSpan.style.display = 'none';
             cancelEditBtn.style.display = 'none';
             saveBtn.textContent = '✅ ذخیره محصول';
-            alert('✅ محصول ویرایش شد (تغییرات فقط در این مرورگر ذخیره شد)');
         }
     }
 
@@ -327,7 +327,6 @@
                 cancelEditBtn.style.display = 'none';
                 saveBtn.textContent = '✅ ذخیره محصول';
             }
-            alert('✅ محصول حذف شد (تغییرات فقط در این مرورگر ذخیره شد)');
         }
     }
 
@@ -572,7 +571,6 @@
         renderCategoryFilter();
         renderProducts();
         input.value = '';
-        alert('✅ دسته‌بندی اضافه شد (تغییرات فقط در این مرورگر ذخیره شد)');
     });
 
     document.getElementById('newCategoryName')?.addEventListener('keydown', (e) => {
@@ -586,7 +584,7 @@
     // ============================================================
     checkLoginStatus();
 
-    console.log('📡 GIST_ID:', GIST_ID);
-    console.log('🔄 در حال دریافت از data.json...');
+    console.log('📡 Worker URL:', WORKER_URL);
+    console.log('🔄 در حال دریافت از Worker...');
     fetchFromGist();
 })();
