@@ -112,7 +112,7 @@
             if (num1 < num2) return generateCaptcha();
             answer = num1 - num2;
         }
-        captchaQuestion.textContent = `? = ${num2} ${operator} ${num1}`;
+        captchaQuestion.textContent = `? =${num2} ${operator} ${num1}`;
         captchaAnswer = answer;
         return answer;
     }
@@ -631,21 +631,10 @@
     // ============================================================
     checkLoginStatus();
 
-    // ===== شرط برای دیباگ =====
-    const isGistConfigured = GIST_TOKEN !== 'PUT_YOUR_GIST_TOKEN_HERE';
-    console.log('📡 آیا Gist تنظیم شده؟', isGistConfigured);
+    // ===== شرط جدید: فقط چک کن که GIST_ID مقدار درست داره =====
+    // چون GIST_ID مستقیم توی کد گذاشته شده، دیگه نیازی به شرط نیست
     console.log('📡 GIST_ID:', GIST_ID);
     console.log('📡 GIST_TOKEN:', GIST_TOKEN ? '✅ توکن وجود دارد' : '❌ توکن خالی است');
-
-    if (isGistConfigured) {
-        console.log('🔄 در حال دریافت از Gist...');
-        fetchFromGist();
-    } else {
-        console.log('⚠️ Gist تنظیم نشده، از دیتای پیش‌فرض استفاده میشود.');
-        setStatus('⚠️ لطفاً Gist Token را در فایل script.js تنظیم کنید.', 'error');
-        grid.innerHTML = `<div class="empty-state">⚙️ ابتدا تنظیمات دیتابیس را کامل کنید</div>`;
-        categories = ['نوشیدنی', 'غذا', 'دسر'];
-        renderCategories();
-        renderCategoryFilter();
-    }
+    console.log('🔄 در حال دریافت از Gist...');
+    fetchFromGist();
 })();
