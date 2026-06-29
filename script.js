@@ -111,7 +111,7 @@
             if (num1 < num2) return generateCaptcha();
             answer = num1 - num2;
         }
-        captchaQuestion.textContent = `${num1} ${operator} ${num2} = ?`;
+        captchaQuestion.textContent = `? = ${num2} ${operator} ${num1}`;
         captchaAnswer = answer;
         return answer;
     }
