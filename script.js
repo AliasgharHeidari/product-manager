@@ -111,7 +111,7 @@
             if (num1 < num2) return generateCaptcha();
             answer = num1 - num2;
         }
-        captchaQuestion.textContent = `? = ${num2} ${operator} ${num1}`;
+        captchaQuestion.textContent = `${num1} ${operator} ${num2} = ?`;
         captchaAnswer = answer;
         return answer;
     }
@@ -199,6 +199,51 @@
     }
 
     // ============================================================
+    // 📡 ذخیره در Gist از طریق Worker
+    // ============================================================
+    async function saveToGist() {
+        try {
+            console.log('🔄 saveToGist شروع شد...');
+            console.log('📡 Worker URL:', WORKER_URL);
+            
+            setStatus('⏳ در حال ذخیره روی سرور...', 'loading');
+            
+            const payload = {
+                products: products,
+                categories: categories
+            };
+
+            const response = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            console.log('📡 وضعیت پاسخ ذخیره:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ خطای ذخیره:', errorText);
+                throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('✅ ذخیره موفق:', result);
+            
+            saveBackupToLocal();
+            setStatus('✅ ذخیره شد!', '');
+            return true;
+        } catch (error) {
+            console.error('❌ Gist save error:', error);
+            setStatus('⚠️ خطا در ذخیره روی سرور', 'error');
+            return false;
+        }
+    }
+
+    // ============================================================
     // مدیریت دسته‌بندی‌ها
     // ============================================================
     function renderCategories() {
@@ -243,7 +288,7 @@
                         products.forEach(p => {
                             if (p.category === cat) p.category = '';
                         });
-                        saveBackupToLocal();
+                        await saveToGist();
                         renderCategories();
                         renderCategoryFilter();
                         renderProducts();
@@ -293,14 +338,19 @@
             category: category || ''
         };
         products.push(newProduct);
-        saveBackupToLocal();
-        renderProducts();
-        clearForm();
+        const saved = await saveToGist();
+        if (saved) {
+            renderProducts();
+            clearForm();
+        } else {
+            products.pop();
+        }
     }
 
     async function updateProduct(id, name, price, image, desc, category) {
         const index = products.findIndex(p => p.id === id);
         if (index !== -1) {
+            const oldProduct = { ...products[index] };
             products[index] = {
                 ...products[index],
                 name: name.trim(),
@@ -309,28 +359,37 @@
                 desc: desc.trim(),
                 category: category || ''
             };
-            saveBackupToLocal();
-            renderProducts();
-            clearForm();
-            editingId = null;
-            editIdSpan.style.display = 'none';
-            cancelEditBtn.style.display = 'none';
-            saveBtn.textContent = '✅ ذخیره محصول';
+            const saved = await saveToGist();
+            if (saved) {
+                renderProducts();
+                clearForm();
+                editingId = null;
+                editIdSpan.style.display = 'none';
+                cancelEditBtn.style.display = 'none';
+                saveBtn.textContent = '✅ ذخیره محصول';
+            } else {
+                products[index] = oldProduct;
+            }
         }
     }
 
     async function deleteProduct(id) {
         const index = products.findIndex(p => p.id === id);
         if (index !== -1) {
+            const oldProducts = [...products];
             products = products.filter(p => p.id !== id);
-            saveBackupToLocal();
-            renderProducts();
-            if (editingId === id) {
-                clearForm();
-                editingId = null;
-                editIdSpan.style.display = 'none';
-                cancelEditBtn.style.display = 'none';
-                saveBtn.textContent = '✅ ذخیره محصول';
+            const saved = await saveToGist();
+            if (saved) {
+                renderProducts();
+                if (editingId === id) {
+                    clearForm();
+                    editingId = null;
+                    editIdSpan.style.display = 'none';
+                    cancelEditBtn.style.display = 'none';
+                    saveBtn.textContent = '✅ ذخیره محصول';
+                }
+            } else {
+                products = oldProducts;
             }
         }
     }
@@ -571,7 +630,7 @@
             return;
         }
         categories.push(name);
-        saveBackupToLocal();
+        await saveToGist();
         renderCategories();
         renderCategoryFilter();
         renderProducts();
