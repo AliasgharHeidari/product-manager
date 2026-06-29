@@ -3,7 +3,7 @@
     // 🔐 تنظیمات مستقیم Gist
     // ============================================================
     const GIST_ID = 'a1e0ae6053e9e0cd26072a8041fc95a9';
-    const GIST_TOKEN = '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';
+    const GIST_TOKEN = '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';
     // ============================================================
 
     const PASSWORD_HASH = '49d0226ac8c0d68837d9a2ec8fa9e826d8a0f70f5e1c3cdb66cf869127c769c1';
