@@ -1,9 +1,9 @@
 (function() {
     // ============================================================
-    // 🔐 تنظیمات - از Cloudflare Worker میخونه
+    // 🔐 تنظیمات مستقیم Gist
     // ============================================================
     const GIST_ID = 'a1e0ae6053e9e0cd26072a8041fc95a9';
-    const WORKER_URL = 'https://calm-block-ab1f.aliasgharaliali1213.workers.dev/'; // ← آدرس Worker رو اینجا بذار
+    const GIST_TOKEN = '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';
     // ============================================================
 
     const PASSWORD_HASH = '49d0226ac8c0d68837d9a2ec8fa9e826d8a0f70f5e1c3cdb66cf869127c769c1';
@@ -112,7 +112,7 @@
             if (num1 < num2) return generateCaptcha();
             answer = num1 - num2;
         }
-        captchaQuestion.textContent = `${num1} ${operator} ${num2} = ?`;
+        captchaQuestion.textContent = `? = ${num2} ${operator} ${num1}`;
         captchaAnswer = answer;
         return answer;
     }
@@ -135,19 +135,19 @@
     }
 
     // ============================================================
-    // 📡 ارتباط با Gist از طریق Cloudflare Worker
+    // 📡 ارتباط مستقیم با Gist API
     // ============================================================
     async function fetchFromGist() {
         try {
             console.log('🔄 fetchFromGist شروع شد...');
-            console.log('📡 Worker URL:', WORKER_URL);
+            console.log('📡 GIST_ID:', GIST_ID);
             
             setStatus('⏳ در حال دریافت منو از سرور...', 'loading');
             
-            const response = await fetch(WORKER_URL, {
-                method: 'GET',
+            const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
                 headers: {
-                    'Accept': 'application/json'
+                    'Authorization': `token ${GIST_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
                 }
             });
 
@@ -157,8 +157,16 @@
                 throw new Error(`HTTP ${response.status} - ${response.statusText}`);
             }
 
-            const content = await response.json();
-            console.log('📦 محتوای دریافتی:', content);
+            const data = await response.json();
+            const files = data.files;
+            const firstFile = Object.values(files)[0];
+            
+            if (!firstFile) {
+                throw new Error('فایلی در Gist یافت نشد');
+            }
+
+            const content = JSON.parse(firstFile.content);
+            console.log('📦 محتوای Gist:', content);
             
             products = content.products || [];
             categories = content.categories || ['نوشیدنی', 'غذا', 'دسر'];
@@ -190,6 +198,45 @@
                 renderProducts();
                 return false;
             }
+        }
+    }
+
+    async function saveToGist() {
+        try {
+            setStatus('⏳ در حال ذخیره روی سرور...', 'loading');
+            
+            const payload = {
+                files: {
+                    'products.json': {
+                        content: JSON.stringify({ 
+                            products: products,
+                            categories: categories 
+                        }, null, 2)
+                    }
+                }
+            };
+
+            const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${GIST_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            saveBackupToLocal();
+            setStatus('✅ ذخیره شد!', '');
+            return true;
+        } catch (error) {
+            console.error('Gist save error:', error);
+            setStatus('⚠️ خطا در ذخیره روی سرور', 'error');
+            return false;
         }
     }
 
@@ -238,7 +285,7 @@
                         products.forEach(p => {
                             if (p.category === cat) p.category = '';
                         });
-                        saveBackupToLocal();
+                        await saveToGist();
                         renderCategories();
                         renderCategoryFilter();
                         renderProducts();
@@ -288,7 +335,7 @@
             category: category || ''
         };
         products.push(newProduct);
-        saveBackupToLocal();
+        await saveToGist();
         renderProducts();
         clearForm();
     }
@@ -304,7 +351,7 @@
                 desc: desc.trim(),
                 category: category || ''
             };
-            saveBackupToLocal();
+            await saveToGist();
             renderProducts();
             clearForm();
             editingId = null;
@@ -318,7 +365,7 @@
         const index = products.findIndex(p => p.id === id);
         if (index !== -1) {
             products = products.filter(p => p.id !== id);
-            saveBackupToLocal();
+            await saveToGist();
             renderProducts();
             if (editingId === id) {
                 clearForm();
@@ -566,7 +613,7 @@
             return;
         }
         categories.push(name);
-        saveBackupToLocal();
+        await saveToGist();
         renderCategories();
         renderCategoryFilter();
         renderProducts();
@@ -584,7 +631,8 @@
     // ============================================================
     checkLoginStatus();
 
-    console.log('📡 Worker URL:', WORKER_URL);
-    console.log('🔄 در حال دریافت از Worker...');
+    console.log('📡 GIST_ID:', GIST_ID);
+    console.log('📡 GIST_TOKEN:', GIST_TOKEN ? '✅ توکن وجود دارد' : '❌ توکن خالی است');
+    console.log('🔄 در حال دریافت از Gist...');
     fetchFromGist();
 })();
