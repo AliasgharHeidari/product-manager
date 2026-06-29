@@ -735,7 +735,7 @@ body::after {
    ===== ریسپانسیو =====
    ============================================================ */
 
-@media (max-width: 768px) {
+@media (max-width: 1000px) {
     .container {
         padding: 20px 14px;
         border-radius: 28px;
